@@ -15,10 +15,117 @@
 		left: 0;
 		right: 0;
 	}
+	#difficulty {
+		font-family: fantasy;
+		padding: 20px;
+		font-size: 25px;
+		margin: 0;
+		position: absolute;
+		top: 10%;
+		left: 50%;
+		-ms-transform: translate(-50%, -50%);
+		transform: translate(-50%, -50%);
+	}
+	.active {
+		background-color: blueviolet;
+		color:antiquewhite;
+	}
+	.btn {
+		font-family: fantasy;
+		padding: 20px;
+		font-size: 25px;
+		margin: 0;
+		position: absolute;
+		top: 4.5%;
+		left: 50%;
+		-ms-transform: translate(-50%, -50%);
+		transform: translate(-50%, -50%);
+	}
+	#scoreboard {
+		padding: 20px;
+		margin: 0;
+		position: absolute;
+		top: 90%;
+		left: 50%;
+		-ms-transform: translate(-50%, -50%);
+		transform: translate(-50%, -50%);
+	}
+	body {
+		font-family: fantasy;
+		font-size: 25px;
+	}
 	</style>
 </head>
 <body>
+	<div>
+		<button id="startstop" onclick="startstop()" class="btn">
+			Start
+		</button>
+		<div id="difficulty">
+			<button id="easy" onclick="changeDifficulty('easy')">
+				Easy
+			</button>
+			<button id="medium" class="active" onclick="changeDifficulty('medium')">
+				Medium
+			</button>
+			<button id="hard" onclick="changeDifficulty('hard')">
+				Hard
+			</button>
+		</div>
+		<div id="scoreboard">
+			<a id="playerscore" style="padding-right: 50px;">Player : 0</a>
+			<a id="aiscore" style="padding-left: 50px;">AI : 0</a>
+		</div>
+
+	</div>
 <script>
+function updateScore(){
+	var aiElement = document.getElementById("aiscore");
+	var playerElement = document.getElementById("playerscore");
+	aiElement.innerHTML = "AI : " + aiScore;
+	playerElement.innerHTML = "Player : " + playerScore;
+}
+
+function startstop(){
+	var element = document.getElementById("startstop");
+	if (isPaused){
+		isPaused = false;
+		element.innerHTML = "Stop";
+	}
+	else {
+		isPaused = true;
+		element.innerHTML = "Start";
+		init();
+	}
+
+}
+
+function changeDifficulty(difficulty) {
+	var easyButton = document.getElementById("easy");
+	var mediumButton = document.getElementById("medium");
+	var hardButton = document.getElementById("hard");
+	if (difficulty == "easy") {
+		easyButton.classList.add("active");
+		mediumButton.classList.remove("active");
+		hardButton.classList.remove("active");
+		playerSpeed = EASY_PLAYER_SPEED;
+		aiSpeed = EASY_AI_SPEED;
+	}
+	else if(difficulty == "medium") {
+		easyButton.classList.remove("active");
+		mediumButton.classList.add("active");
+		hardButton.classList.remove("active");
+		playerSpeed = MEDIUM_PLAYER_SPEED;
+		aiSpeed = MEDIUM_AI_SPEED;
+	}
+	else {
+		easyButton.classList.remove("active");
+		mediumButton.classList.remove("active");
+		hardButton.classList.add("active");
+		playerSpeed = HARD_PLAYER_SPEED;
+		aiSpeed = HARD_AI_SPEED;
+	}
+}
 var
 /**
  * Constants
@@ -50,6 +157,9 @@ DownArrow = 40,
 canvas,
 ctx,
 keystate,
+isPaused = true,
+playerScore = 0;
+aiScore = 0;
 /**
  * The player paddle
  * 
@@ -116,7 +226,7 @@ ball = {
 	y:   null,
 	vel: null,
 	side:  20,
-	speed: 6,
+	speed: 7,
 	/**
 	 * Serves the ball towards the specified side
 	 * 
@@ -173,10 +283,19 @@ ball = {
 			this.vel.x = smash*(pdle===player ? 1 : -1)*this.speed*Math.cos(phi);
 			this.vel.y = smash*this.speed*Math.sin(phi);
 		}
+		if (this.x > WIDTH) {
+			console.log("Player Scored");
+			playerScore++;
+		}
+		if(this.x+this.side < 0) {
+			console.log("AI Scored")
+			aiScore++;
+		}
 		// reset the ball when ball outside of the canvas in the
 		// x direction
 		if (0 > this.x+this.side || this.x > WIDTH) {
 			this.serve(pdle===player ? 1 : -1);
+			updateScore();
 		}
 	},
 	/**
@@ -225,12 +344,18 @@ function init() {
 	player.y = (HEIGHT - player.height)/2;
 	ai.x = WIDTH - (player.width + ai.width);
 	ai.y = (HEIGHT - ai.height)/2;
+	playerScore = 0;
+	aiScore = 0;
+	updateScore();
 	ball.serve(1);
 }
 /**
  * Update all game objects
  */
 function update() {
+	if(isPaused) {
+			return;
+		}
 	ball.update();
 	player.update();
 	ai.update();
